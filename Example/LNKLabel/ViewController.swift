@@ -11,6 +11,14 @@ import LNKLabel
 import SafariServices
 import MessageUI
 
+// MARK: - Custom pattern
+public class CustomPattern: Pattern {
+    override public var regString: String {
+        return "hogehoge"
+    }
+}
+
+// MARK: - ViewController
 class ViewController: UIViewController {
 
     override func viewDidLoad() {
@@ -57,15 +65,7 @@ extension ViewController {
     }
 }
 
-
-extension ViewController: MFMailComposeViewControllerDelegate {
-    
-    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
-        controller.dismiss(animated: true)
-    }
-}
-
-
+// MARK: - LNKLabelDelegate
 extension ViewController: LNKLabelDelegate {
     
     func didTaped(label: LNKLabel, pattern: Pattern, matchText: String, range: NSRange) {
@@ -83,9 +83,13 @@ extension ViewController: LNKLabelDelegate {
     
 }
 
-
-public class CustomPattern: Pattern {
-    override public var regString: String {
-        return "hogehoge"
+// MARK: - MFMailComposeViewControllerDelegate
+extension ViewController: MFMailComposeViewControllerDelegate {
+    
+    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true)
     }
 }
+
+
+
