@@ -8,6 +8,8 @@
 
 import UIKit
 import LNKLabel
+import SafariServices
+import MessageUI
 
 class ViewController: UIViewController {
 
@@ -15,14 +17,14 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         let label = LNKLabel()
-        label.linkPatterns = [MailPattern(), URLPattern(), PhonePattern(), CustomPattern()]
-        label.text = "https://github.com/asashin227/LinkLabel\nfugafuga09012345678\naaa.bbb@ccc.com\nhogehogefugafuga"
+        label.linkPatterns = [MailPattern(), URLPattern(), PhonePattern()]
+        label.linkPatterns?.append(CustomPattern())
+        label.text = "https://github.com/asashin227/LNKLabel\n09012345678\naaa.bbb@ccc.com\nhogehogefugafuga"
         label.delegate = self
         label.numberOfLines = 0
         label.frame.size.width = UIScreen.main.bounds.size.width
         label.sizeToFit()
         label.center = self.view.center
-        print(label.text ?? "")
         view.addSubview(label)
     }
 
@@ -33,17 +35,47 @@ class ViewController: UIViewController {
     
 }
 
+extension ViewController {
+    func openURL(_ urlString: String) {
+        guard let url = NSURL.init(string: urlString) else { return }
+        
+        let safari = SFSafariViewController(url: url as URL)
+        self.present(safari, animated: true, completion: nil)
+    }
+    
+    func call(phoneNumberString: String) {
+        let scheme: URL = URL(string: String(format: "tel:%@", phoneNumberString))!
+        UIApplication.shared.openURL(scheme)
+    }
+    
+    func openMailUI(mailAddressString: String) {
+        if !MFMailComposeViewController.canSendMail() { return }
+        let mailVC = MFMailComposeViewController()
+        mailVC.mailComposeDelegate = self
+        mailVC.setToRecipients([mailAddressString])
+        self.present(mailVC, animated: true, completion: nil)
+    }
+}
+
+
+extension ViewController: MFMailComposeViewControllerDelegate {
+    
+    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true)
+    }
+}
+
 
 extension ViewController: LNKLabelDelegate {
     
     func didTaped(label: LNKLabel, pattern: Pattern, matchText: String, range: NSRange) {
         switch pattern {
         case is URLPattern:
-            print("taped url link: \(matchText)")
+            openURL(matchText)
         case is MailPattern:
-            print("taped mail address: \(matchText)")
+            openMailUI(mailAddressString: matchText)
         case is PhonePattern:
-            print("taped phone number: \(matchText)")
+            call(phoneNumberString: matchText)
         default:
             print("taped custom pattern: \(matchText)")
         }
