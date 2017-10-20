@@ -25,15 +25,45 @@ public class LNKLabel: UILabel {
         didSet { reloadAttribute() }
     }
     
-    override public func draw(_ rect: CGRect) {
-        super.draw(rect)
+    convenience public init() {
+        self.init(frame: .zero)
+    }
+    
+    override public init(frame: CGRect) {
+        super.init(frame: frame)
+        self.addTouchGesture()
+       
+    }
+    
+    required public init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    
+    private func addTouchGesture() {
         self.isUserInteractionEnabled = true
         let gesture = UITapGestureRecognizer(target: self, action: #selector(LNKLabel.didTaped(gesture:)))
         gesture.numberOfTapsRequired = 1
         self.addGestureRecognizer(gesture)
-        
     }
-    
+}
+
+extension LNKLabel {
+    public func hitLink(at point: CGPoint) -> (touchedText: String, textRange: NSRange, pattern: Pattern)? {
+        guard let text = text else { return nil }
+        for match in matcher.matches {
+            for link in match.value {
+                let glyphRect = rect(of: link.0, in: text, range: link.1)
+                if glyphRect == .zero {
+                    continue
+                }
+                if glyphRect.contains(point) {
+                    return (link.0, link.1, match.key)
+                }
+            }
+        }
+        return nil
+    }
 }
 
 extension LNKLabel {
@@ -68,20 +98,9 @@ extension LNKLabel {
 
     @objc
     private func didTaped(gesture: UIGestureRecognizer) {
-        guard let text = text else { return }
         let touchPoint = gesture.location(in: self)
-        for match in matcher.matches {
-            for link in match.value {
-                let glyphRect = rect(of: link.0, in: text, range: link.1)
-                if glyphRect == .zero {
-                    continue
-                }
-                if glyphRect.contains(touchPoint) {
-                    self.didTaped(link: link, pattern: match.key)
-                    break
-                }
-            }
-        }
+        guard let res = hitLink(at: touchPoint) else { return }
+        self.didTaped(touchedText: res.touchedText, touchedRange: res.textRange, pattern: res.pattern)
     }
     
     private func rect(of text: String, in plainText: String, range: NSRange) -> CGRect {
@@ -99,8 +118,9 @@ extension LNKLabel {
         return glyphRect
     }
     
-    private func didTaped(link: (String, NSRange), pattern: Pattern) {
+    private func didTaped(touchedText: String, touchedRange: NSRange, pattern: Pattern) {
         guard let delegate = delegate else { return }
-        delegate.didTaped(label: self, pattern: pattern, matchText: link.0, range: link.1)
+        delegate.didTaped(label: self, pattern: pattern, matchText: touchedText, range: touchedRange)
     }
 }
+
