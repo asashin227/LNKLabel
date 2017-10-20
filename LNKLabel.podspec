@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'LNKLabel'
-  s.version          = '0.1.1'
+  s.version          = '0.2.0'
   s.summary          = 'Inputed link text automatic appending attribute.'
 
 # This description is used to generate tags and improve search results.
