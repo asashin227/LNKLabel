@@ -25,6 +25,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         let label = LNKLabel()
+        label.linkColor = .red
         label.linkPatterns = [MailPattern(), URLPattern(), PhonePattern()]
         label.linkPatterns?.append(CustomPattern())
         label.text = "https://github.com/asashin227/LNKLabel\n09012345678\naaa.bbb@ccc.com\nhogehogefugafuga"

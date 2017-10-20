@@ -13,29 +13,16 @@ public protocol LNKLabelDelegate: NSObjectProtocol {
 } 
 
 public class LNKLabel: UILabel {
-    
     fileprivate var matcher = Matcher()
     public var delegate: LNKLabelDelegate?
-    
     override public var text: String? {
-        didSet { self.attributedText = attributedString() }
+        didSet { reloadAttribute() }
     }
     public var linkPatterns: [Pattern]? {
-        didSet { self.attributedText = attributedString() }
+        didSet { reloadAttribute() }
     }
-    
-    
-    private func attributedString() -> NSAttributedString? {
-        guard let text = text, let linkPatterns = linkPatterns else { return nil }
-        matcher.text = text
-        matcher.patterms = linkPatterns
-        var attribute = NSMutableAttributedString(string: text)
-        for match in matcher.matches {
-            for link in match.value {
-                addAttribute(attribute: &attribute, plainText: text, targetText: link.0, range: link.1)
-            }
-        }
-        return attribute
+    public var linkColor: UIColor = .blue {
+        didSet { reloadAttribute() }
     }
     
     override public func draw(_ rect: CGRect) {
@@ -44,9 +31,43 @@ public class LNKLabel: UILabel {
         let gesture = UITapGestureRecognizer(target: self, action: #selector(LNKLabel.didTaped(gesture:)))
         gesture.numberOfTapsRequired = 1
         self.addGestureRecognizer(gesture)
+        
     }
     
-    @objc private func didTaped(gesture: UIGestureRecognizer) {
+}
+
+extension LNKLabel {
+    
+    private func reloadAttribute() {
+        guard let text = text, let linkPatterns = linkPatterns else { return }
+        self.attributedText = linkAttribute(for: text, patterns: linkPatterns)
+    }
+    
+    private func linkAttribute(for text: String, patterns: [Pattern]) -> NSAttributedString? {
+        matcher.text = text
+        matcher.patterms = linkPatterns
+        var attribute = NSMutableAttributedString(string: text)
+        for match in matcher.matches {
+            for link in match.value {
+                addLinkAttribute(for: &attribute, plainText: text, targetText: link.0, range: link.1)
+            }
+        }
+        return attribute
+    }
+    
+    private func addLinkAttribute(for attributes: inout NSMutableAttributedString, plainText: String, targetText: String, range: NSRange) {
+        attributes.addAttributes([NSAttributedStringKey.font : self.font], range: NSMakeRange(0, plainText.count))
+        attributes.addAttributes([NSAttributedStringKey.underlineStyle : NSUnderlineStyle.styleSingle.rawValue,
+                                  NSAttributedStringKey.underlineColor : linkColor,
+                                  NSAttributedStringKey.foregroundColor : linkColor], range: range)
+    }
+    
+}
+
+extension LNKLabel {
+
+    @objc
+    private func didTaped(gesture: UIGestureRecognizer) {
         guard let text = text else { return }
         let touchPoint = gesture.location(in: self)
         for match in matcher.matches {
@@ -63,15 +84,7 @@ public class LNKLabel: UILabel {
         }
     }
     
-    private func addAttribute(attribute: inout NSMutableAttributedString, plainText: String, targetText: String, range: NSRange) {
-        attribute.addAttributes([NSAttributedStringKey.font : self.font], range: NSMakeRange(0, plainText.count))
-        attribute.addAttributes([NSAttributedStringKey.underlineStyle : NSUnderlineStyle.styleSingle.rawValue,
-                                 NSAttributedStringKey.underlineColor : UIColor.blue,
-                                 NSAttributedStringKey.foregroundColor : UIColor.blue], range: range)
-    }
-    
     private func rect(of text: String, in plainText: String, range: NSRange) -> CGRect {
-
         guard let attributedText = self.attributedText else { return .zero }
         let textStorage = NSTextStorage(attributedString: attributedText)
         let layoutManager = NSLayoutManager()
@@ -91,4 +104,3 @@ public class LNKLabel: UILabel {
         delegate.didTaped(label: self, pattern: pattern, matchText: link.0, range: link.1)
     }
 }
-
